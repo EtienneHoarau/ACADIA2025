@@ -31,6 +31,7 @@ def calculate_psnr(img1, img2):
     return psnr
 
 
+
 #vérifie existance du modele 
 if not os.path.exists(checkpoint_filepath):
     print("Pas de fichier de sauvegarde\n")
@@ -51,7 +52,8 @@ if not os.path.exists(checkpoint_filepath):
     conv_encoder = tf.keras.Model(inputs=encoder_input, outputs=encoded_output, name="encoder")
     
     # Décodeur
-    decoder_input = tf.keras.layers.Input(shape=(30,))
+    noise_factor = 0.5
+    decoder_input = tf.keras.layers.Input(shape=(30,))+noise_factor*np.random.normal(loc=0.0,scale=1.0,size = (30,))
     x = tf.keras.layers.Dense(3 * 3 * 16)(decoder_input)
     x = tf.keras.layers.Reshape((3, 3, 16))(x)
     x = tf.keras.layers.Conv2DTranspose(16, 3, strides=2, activation="relu")(x)
