@@ -193,7 +193,40 @@ if not os.path.exists(checkpoint_filepath):
 
     # Entraîner le modèle
     #early_stopping = tf.keras.callbacks.EarlyStopping(monitor='accuracy', patience=10,min_delta=1e-4,verbose=0,mode='auto')
-    autoencoder.fit(X_train, X_train, epochs=EPOCHS, batch_size=BATCH_SIZE, validation_split=0.2, shuffle=True)
+    history = autoencoder.fit(X_train, X_train, epochs=EPOCHS, batch_size=BATCH_SIZE, validation_split=0.2, shuffle=True)
+
+    # Récupérer les informations   
+    nbperiode=np.arange(1,21,1)
+    train_accuracy = history.history['accuracy']
+    val_accuracy = history.history['val_accuracy']
+    train_loss = history.history['loss']
+    val_loss = history.history['val_loss']
+    nb_periode=np.arange(1,EPOCHS+1)
+   
+    #Affichage des courbe
+    # Premier graphe
+    plt.subplot(2, 2, 1)  # 2 lignes, 1 colonne, 1er sous-graphe
+    plt.plot(nb_periode, train_accuracy, color="blue")
+    plt.title("Précision de l'entrainement")
+    plt.grid(True)
+    # Deuxième graphe
+    plt.subplot(2, 2, 2)  # 2 lignes, 1 colonne, 2e sous-graphe
+    plt.plot(nb_periode,val_accuracy, color="red")
+    plt.title("Précision de la validation")
+    plt.grid(True)
+    #
+    plt.subplot(2, 2, 3)  # 2 lignes, 1 colonne, 2e sous-graphe
+    plt.plot(nb_periode,train_loss, color="purple")
+    plt.title("Loss de l'entrainement")
+    plt.grid(True)
+    #
+    plt.subplot(2, 2, 4)  # 2 lignes, 1 colonne, 2e sous-graphe
+    plt.plot(nb_periode, val_loss, color="orange")
+    plt.title("Loss de la validation")
+    plt.grid(True)
+    # Afficher les sous-graphes
+    plt.tight_layout()  # Ajuste les marges pour éviter les chevauchements
+    plt.show()
 
     # Sauvegarder le modèle complet et les sous-modèles
     autoencoder.save(checkpoint_filepath, save_format='tf')
