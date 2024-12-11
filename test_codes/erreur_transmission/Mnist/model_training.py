@@ -117,3 +117,4 @@ conv_ae.summary()
 plot_reconstructions(conv_ae, X_valid)
 plt.show()
 
+print("FINI")
