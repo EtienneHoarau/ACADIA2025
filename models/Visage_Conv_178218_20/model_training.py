@@ -12,14 +12,14 @@ os.environ['TF_CPP_MIN_LOG_LEVEL'] = '1'
 
 # Paramètres de base
 image_size = (256,256)
-data_dir = "D:\\cours\\PLP\\dataset\\img_align_celeba\\img_align_celeba"  # Dossier de visages
-checkpoint_filepath = 'autoencoder_faces_512_10'
+data_dir = "..\..\Dataset\visages\img"  # Dossier de visages
+checkpoint_filepath = 'autoencoder_faces_512_11'
 encoder_filepath = "./encoder/" + checkpoint_filepath + "_encoder"
 decoder_filepath = "./decoder/" + checkpoint_filepath + "_decoder"
 
 IMG_HEIGHT, IMG_WIDTH = image_size
 BATCH_SIZE = 8
-EPOCHS = 2000
+EPOCHS = 50
 NB_IMAGE = 1000
 
 def calculate_psnr(img1, img2):
@@ -33,8 +33,8 @@ def calculate_psnr(img1, img2):
         return float('inf')  # Les images sont identiques
 
     # Calculer le PSNR
-    max_pixel = 255.0  # Valeur maximale pour les images en 8 bits
-    psnr = 20 * np.log10(max_pixel / np.sqrt(mse))
+    max_pixel = 1  # Valeur maximale pour les images en 8 bits
+    psnr = 10 * np.log10((max_pixel**2) / np.sqrt(mse))
     return psnr
 
 # Chargement et prétraitement des images
