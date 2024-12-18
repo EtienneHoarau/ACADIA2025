@@ -3,25 +3,28 @@ import numpy as np
 import cv2
 import tensorflow as tf
 from tensorflow.keras import layers, models
-from tensorflow.keras.layers import Input, Conv2D, Conv2DTranspose, BatchNormalization, LeakyReLU
-from tensorflow.keras.optimizers import Adam
+from tensorflow.keras.layers import Conv2D, Conv2DTranspose, BatchNormalization, LeakyReLU
+from tensorflow.keras.optimizers import Nadam
 import matplotlib.pyplot as plt
 
 os.environ["KMP_DUPLICATE_LIB_OK"] = "TRUE"
 os.environ['TF_CPP_MIN_LOG_LEVEL'] = '1'
 
+print("Num GPUs Available: ", len(tf.config.list_physical_devices('GPU')))
+print("Num GPUs Available: ", len(tf.config.list_physical_devices('GPU')))
 # Paramètres de base
-image_size = (256,256)
-data_dir = "..\..\..\Dataset\\visages\img"  # Dossier de visages
-checkpoint_filepath = 'autoencoder_faces_512_21'
+checkpoint_filepath = 'autoencoder_faces_512_12'
 encoder_filepath = "./encoder/" + checkpoint_filepath + "_encoder"
 decoder_filepath = "./decoder/" + checkpoint_filepath + "_decoder"
 
+image_size = (256,256)
 IMG_HEIGHT, IMG_WIDTH = image_size
-BATCH_SIZE = 8
-EPOCHS = 50
-NB_IMAGE = 1000
+BATCH_SIZE = 32
+EPOCHS = 10
+NB_IMAGE = 500
 
+
+#PSNR
 def calculate_psnr(img1, img2):
     # Vérifier si les images ont les mêmes dimensions
     if img1.shape != img2.shape:
@@ -36,29 +39,14 @@ def calculate_psnr(img1, img2):
     max_pixel = 1  # Valeur maximale pour les images en 8 bits
     psnr = 10 * np.log10((max_pixel**2) / np.sqrt(mse))
     return psnr
+## Charger les images et les diviser en ensembles d'entraînement et de test
+#
+X_train = np.load("..\..\..\\Dataset\\treatedimage\\convisage500.npy", allow_pickle=True)#directory du fichier image prétraiter
+X_test = X_train[:int(NB_IMAGE/5)]
+X_train = X_train[int(NB_IMAGE/5):]
 
-# Chargement et prétraitement des images
-def load_images(data_dir, image_size, n_images=NB_IMAGE, color_mode='rgb'):
-    images = []
-    image_paths = os.listdir(data_dir)[:n_images]
-    for img_file in image_paths:
-        img = cv2.imread(os.path.join(data_dir, img_file), cv2.IMREAD_COLOR if color_mode == 'rgb' else cv2.IMREAD_GRAYSCALE)
-        if img is not None:
-            if color_mode == 'rgb':
-                img = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
-            img = cv2.resize(img, (image_size[1], image_size[0]))  # Ajustement de taille pour (512, 512)
-            img = img.astype('float32') / 255.0  # Normalisation
-            images.append(img)
-    images = np.array(images)
-    if color_mode == 'rgb':
-        return images.reshape(-1, image_size[0], image_size[1], 3)  # Reshape pour Conv2D (RGB)
-    else:
-        return images.reshape(-1, image_size[0], image_size[1], 1)  # Reshape pour Conv2D (Grayscale)
-
-# Charger les images et les diviser en ensembles d'entraînement et de test
-X_train = load_images(data_dir, image_size, color_mode='rgb')
-X_test = X_train[:int(NB_IMAGE/2)]
-X_train = X_train[int(NB_IMAGE/2):]
+im_test=X_test[1]
+plt.imshow(im_test)
 
 # Vérifier si le modèle existe déjà
 if not os.path.exists(checkpoint_filepath):
@@ -184,7 +172,7 @@ if not os.path.exists(checkpoint_filepath):
     autoencoder = models.Model(inputs=autoencoder_input, outputs=autoencoder_output)
 
     # Compilation du modèle
-    autoencoder.compile(optimizer=Adam(learning_rate=0.001), loss="mse", metrics=["accuracy"])
+    autoencoder.compile(optimizer=Nadam(learning_rate=0.001), loss="mse", metrics=["accuracy"])
 
     # Résumé des modèles
     encoder.summary()
@@ -193,7 +181,7 @@ if not os.path.exists(checkpoint_filepath):
 
     # Entraîner le modèle
     #early_stopping = tf.keras.callbacks.EarlyStopping(monitor='accuracy', patience=10,min_delta=1e-4,verbose=0,mode='auto')
-    history = autoencoder.fit(X_train, X_train, epochs=EPOCHS, batch_size=BATCH_SIZE, validation_split=0.2, shuffle=True)
+    history = autoencoder.fit(X_train, X_train, epochs=EPOCHS, batch_size=BATCH_SIZE, validation_data=(X_test, X_test), shuffle=True)
 
     # Récupérer les informations   
     nbperiode=np.arange(1,21,1)
@@ -262,7 +250,9 @@ def plot_reconstructions(model, images, n_images=5):
 # Afficher des exemples de reconstructions pour évaluer la performance
 plot_reconstructions(autoencoder, X_test)
 
-# Chargement et évaluation des anomalies
+
+
+# Fonction Chargement et évaluation des anomalies
 def load_and_prepare_image(filepath, img_size):
     img = cv2.imread(filepath)
     img = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
