@@ -12,8 +12,8 @@ os.environ['TF_CPP_MIN_LOG_LEVEL'] = '1'
 
 # Paramètres de base
 image_size = (256,256)
-data_dir = "..\..\Dataset\visages\img"  # Dossier de visages
-checkpoint_filepath = 'autoencoder_faces_512_11'
+data_dir = "..\..\..\Dataset\\visages\img"  # Dossier de visages
+checkpoint_filepath = 'autoencoder_faces_512_21'
 encoder_filepath = "./encoder/" + checkpoint_filepath + "_encoder"
 decoder_filepath = "./decoder/" + checkpoint_filepath + "_decoder"
 
