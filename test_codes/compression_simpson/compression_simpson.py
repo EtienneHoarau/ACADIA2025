@@ -12,15 +12,15 @@ os.environ['TF_CPP_MIN_LOG_LEVEL'] = '1'
 
 # Paramètres de base
 image_size = (256,256)
-data_dir = "..\..\..\Dataset\\visages\img"  # Dossier de visages
-checkpoint_filepath = 'autoencoder_faces_512_14'
+data_dir = "..\..\..\dataset\\visages\img"  # Dossier de visages
+checkpoint_filepath = 'autoencoder_faces_512_15'
 encoder_filepath = "./encoder/" + checkpoint_filepath + "_encoder"
 decoder_filepath = "./decoder/" + checkpoint_filepath + "_decoder"
 
 IMG_HEIGHT, IMG_WIDTH = image_size
 BATCH_SIZE = 8
-EPOCHS = 50
-NB_IMAGE = 2000
+EPOCHS = 3000
+NB_IMAGE = 100
 
 def calculate_psnr(img1, img2):
     # Vérifier si les images ont les mêmes dimensions
@@ -227,7 +227,7 @@ def plot_reconstructions(model, images, n_images=5):
     plt.show()
 
 # Afficher des exemples de reconstructions pour évaluer la performance
-plot_reconstructions(autoencoder, X_train)
+#plot_reconstructions(autoencoder, X_train)
 
 # Chargement et évaluation des anomalies
 def load_and_prepare_image(filepath, img_size):
@@ -257,6 +257,6 @@ def plot_anomaly(model, image):
     plt.show()
 
 # Test de reconstruction et visualisation des anomalies
-# erreur_dir = "D:\\cours\\PLP\\dataset\\img_align_celeba\\head2.jpg"
-# erreur = load_and_prepare_image(erreur_dir, image_size)
-# plot_anomaly(autoencoder, erreur)
+erreur_dir = "D:\\cours\\PLP\\dataset\\visages\\head2.jpg"
+erreur = load_and_prepare_image(erreur_dir, image_size)
+plot_anomaly(autoencoder, erreur)

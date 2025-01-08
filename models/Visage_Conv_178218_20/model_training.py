@@ -13,15 +13,15 @@ os.environ['TF_CPP_MIN_LOG_LEVEL'] = '1'
 print("Num GPUs Available: ", len(tf.config.list_physical_devices('GPU')))
 print("Num GPUs Available: ", len(tf.config.list_physical_devices('GPU')))
 # Paramètres de base
-checkpoint_filepath = 'autoencoder_faces_512_12'
+checkpoint_filepath = 'autoencoder_faces_512_13'
 encoder_filepath = "./encoder/" + checkpoint_filepath + "_encoder"
 decoder_filepath = "./decoder/" + checkpoint_filepath + "_decoder"
 
 image_size = (256,256)
 IMG_HEIGHT, IMG_WIDTH = image_size
 BATCH_SIZE = 32
-EPOCHS = 10
-NB_IMAGE = 500
+EPOCHS = 3000
+NB_IMAGE = 100
 
 
 #PSNR
