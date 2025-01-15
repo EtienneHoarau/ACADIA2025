@@ -19,8 +19,8 @@ decoder_filepath = "./decoder/" + checkpoint_filepath + "_decoder"
 
 IMG_HEIGHT, IMG_WIDTH = image_size
 BATCH_SIZE = 8
-EPOCHS = 3000
-NB_IMAGE = 100
+EPOCHS = 50
+NB_IMAGE = 2000
 
 def calculate_psnr(img1, img2):
     # Vérifier si les images ont les mêmes dimensions
@@ -227,7 +227,7 @@ def plot_reconstructions(model, images, n_images=5):
     plt.show()
 
 # Afficher des exemples de reconstructions pour évaluer la performance
-#plot_reconstructions(autoencoder, X_train)
+plot_reconstructions(autoencoder, X_train)
 
 # Chargement et évaluation des anomalies
 def load_and_prepare_image(filepath, img_size):
