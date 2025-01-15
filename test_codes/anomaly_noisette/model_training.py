@@ -12,15 +12,15 @@ os.environ['TF_CPP_MIN_LOG_LEVEL'] = '1'
 
 # Paramètres de base
 image_size = (256,256)
-data_dir = "D:\cours\\PLP\\dataset\\video_test\\augmented_images"  # Dossier de visages
-checkpoint_filepath = 'autoencoder_faces_512_16'
+data_dir = "D:\\cours\\PLP\\dataset\\hazelnut\\train\\augmented_images"  # Dossier de visages
+checkpoint_filepath = 'autoencoder_faces_512_17'
 encoder_filepath = "./encoder/" + checkpoint_filepath + "_encoder"
 decoder_filepath = "./decoder/" + checkpoint_filepath + "_decoder"
 
 IMG_HEIGHT, IMG_WIDTH = image_size
 BATCH_SIZE = 1
 EPOCHS = 100
-NB_IMAGE = 4000
+NB_IMAGE = 1500
 
 def calculate_psnr(img1, img2):
     # Vérifier si les images ont les mêmes dimensions
@@ -57,8 +57,14 @@ def load_images(data_dir, image_size, n_images=NB_IMAGE, color_mode='rgb'):
 
 # Charger les images et les diviser en ensembles d'entraînement et de test
 X_train2 = load_images(data_dir, image_size, color_mode='rgb')
+plt.figure();
+
 X_test = X_train2[:int(NB_IMAGE/2)]
 X_train = X_train2[int(NB_IMAGE/2):]
+#plt.imshow(X_test[1])
+plt.imshow(X_train[1])
+plt.figure();
+print("Printed")
 
 # Vérifier si le modèle existe déjà
 if not os.path.exists(checkpoint_filepath):
@@ -284,6 +290,6 @@ def plot_anomaly(model, image):
     plt.show()
 
 # Test de reconstruction et visualisation des anomalies
-erreur_dir = "D:\\cours\\PLP\\dataset\\video_test\\carte_erreur.jpg"
+erreur_dir = "D:\\cours\\PLP\\dataset\\hazelnut\\test\\crack\\015.png"
 erreur = load_and_prepare_image(erreur_dir, image_size)
 plot_anomaly(autoencoder, erreur)
