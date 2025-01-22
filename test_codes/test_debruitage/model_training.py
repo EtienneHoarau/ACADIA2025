@@ -3,24 +3,31 @@ import numpy as np
 import cv2
 import tensorflow as tf
 from tensorflow.keras import layers, models
-from tensorflow.keras.layers import Input, Conv2D, Conv2DTranspose, BatchNormalization, LeakyReLU
-from tensorflow.keras.optimizers import Adam
+from tensorflow.keras.layers import Conv2D, Conv2DTranspose, BatchNormalization, LeakyReLU
+from tensorflow.keras.optimizers import Nadam
 import matplotlib.pyplot as plt
 
 os.environ["KMP_DUPLICATE_LIB_OK"] = "TRUE"
 os.environ['TF_CPP_MIN_LOG_LEVEL'] = '1'
 
+print("Num GPUs Available: ", len(tf.config.list_physical_devices('GPU')))
+print("Num GPUs Available: ", len(tf.config.list_physical_devices('GPU')))
 # Paramètres de base
-image_size = (256,256)
-data_dir = "..\..\..\dataset\\visages\img"  # Dossier de visages
-checkpoint_filepath = 'autoencoder_faces_512_18'
+data_dir = "..\..\..\Dataset\\visages\img"  # Dossier de visages
+checkpoint_filepath = 'autoencoder_faces_512_15'
 encoder_filepath = "./encoder/" + checkpoint_filepath + "_encoder"
 decoder_filepath = "./decoder/" + checkpoint_filepath + "_decoder"
 
+image_size = (256,256)
 IMG_HEIGHT, IMG_WIDTH = image_size
-BATCH_SIZE = 1
-EPOCHS = 50
-NB_IMAGE = 2000
+BATCH_SIZE = 32
+EPOCHS = 100
+NB_IMAGE = 1000
+
+#crée des données bruités
+noise_factor = 0.5
+
+
 
 def calculate_psnr(img1, img2):
     # Vérifier si les images ont les mêmes dimensions
@@ -40,127 +47,192 @@ def calculate_psnr(img1, img2):
 # Chargement et prétraitement des images
 def load_images(data_dir, image_size, n_images=NB_IMAGE, color_mode='rgb'):
     images = []
+    images_noised=[]
+    test_pout=0
     image_paths = os.listdir(data_dir)[:n_images]
     for img_file in image_paths:
         img = cv2.imread(os.path.join(data_dir, img_file), cv2.IMREAD_COLOR if color_mode == 'rgb' else cv2.IMREAD_GRAYSCALE)
+        
+        if (test_pout==1):
+            #img[:,:,:] = 0
+            
+            #print(img)
+            print("pipi")
+        
         if img is not None:
             if color_mode == 'rgb':
                 img = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
             img = cv2.resize(img, (image_size[1], image_size[0]))  # Ajustement de taille pour (512, 512)
             img = img.astype('float32') / 255.0  # Normalisation
+            img_noised = img+noise_factor*np.random.normal(loc=0.0,scale=1.0,size = img.shape)
+            
+            if (test_pout==1):
+                
+                
+                #print(img_noised)
+                print("pascal la pute")
+            test_pout+=1
             images.append(img)
+            images_noised.append(img_noised)
     images = np.array(images)
+    images_noised = np.array(images_noised)
     if color_mode == 'rgb':
-        return images.reshape(-1, image_size[0], image_size[1], 3)  # Reshape pour Conv2D (RGB)
+        return [images.reshape(-1, image_size[0], image_size[1], 3),images_noised.reshape(-1, image_size[0], image_size[1], 3)]  # Reshape pour Conv2D (RGB)
     else:
-        return images.reshape(-1, image_size[0], image_size[1], 1)  # Reshape pour Conv2D (Grayscale)
+        return [images.reshape(-1, image_size[0], image_size[1], 1),images_noised.reshape(-1, image_size[0], image_size[1], 1)]  # Reshape pour Conv2D (Grayscale)
 
 # Charger les images et les diviser en ensembles d'entraînement et de test
-X_train2 = load_images(data_dir, image_size, color_mode='rgb')
-X_test = X_train2[:int(NB_IMAGE/2)]
-X_train = X_train2[int(NB_IMAGE/2):]
+[X_train2,X_train_noised2] = load_images(data_dir, image_size, color_mode='rgb')
+
+print(X_train2[1])
+print("jhdfj ehfioe ")
+X_valid = X_train2[:int(NB_IMAGE/3)]
+X_valid_noised=X_train_noised2[:int(NB_IMAGE/3)]
+X_train = X_train2[int(NB_IMAGE/3):]
+X_train_noised=X_train_noised2[int(NB_IMAGE/3):]
+plt.figure()
+plt.subplot(1,2,1)
+plt.imshow(X_valid[1],cmap="binary")
+plt.title("Non bruité")
+plt.subplot(1,2,2)
+plt.imshow(X_valid_noised[1],cmap='binary')
+plt.title("bruité")
+plt.show()
 
 # Vérifier si le modèle existe déjà
 if not os.path.exists(checkpoint_filepath):
     print("Pas de modèle de sauvegarde trouvé. Création d'un nouveau modèle.")
 
-    # Encodeur
-    encoder_input = Input(shape=(IMG_HEIGHT, IMG_WIDTH, 3))
-    
-    # Première couche
-    x = Conv2D(16, kernel_size=(4, 4), strides=2, padding="same")(encoder_input)
+    # Définition de l'encodeur
+    encoder_input = layers.Input(shape=(IMG_HEIGHT, IMG_WIDTH, 3))
+    x = Conv2D(3, kernel_size=(4, 4), strides=2, padding="same")(encoder_input)
     x = BatchNormalization()(x)
     x = LeakyReLU()(x)
-    
-    # Deuxième couche
+
+   # Deuxième couche
     x = Conv2D(32, kernel_size=(4, 4), strides=2, padding="same")(x)
     x = BatchNormalization()(x)
     x = LeakyReLU()(x)
-    
-    # Troisième couche
+
+   # Troisième couche
+    x = Conv2D(32, kernel_size=(4, 4), strides=2, padding="same")(x)
+    x = BatchNormalization()(x)
+    x = LeakyReLU()(x)
+
+   # Quatrième couche
+    x = Conv2D(32, kernel_size=(3, 3), strides=1, padding="same")(x)
+    x = BatchNormalization()(x)
+    x = LeakyReLU()(x)
+
+   # Cinquième couche
     x = Conv2D(64, kernel_size=(4, 4), strides=2, padding="same")(x)
     x = BatchNormalization()(x)
     x = LeakyReLU()(x)
-    
-    # Quatrième couche
-    x = Conv2D(128, kernel_size=(3, 3), strides=1, padding="same")(x)
+
+   # Sixième couche
+    x = Conv2D(64, kernel_size=(3, 3), strides=1, padding="same")(x)
     x = BatchNormalization()(x)
     x = LeakyReLU()(x)
-    
-    # Cinquième couche
+
+   # Septième couche
     x = Conv2D(128, kernel_size=(4, 4), strides=2, padding="same")(x)
     x = BatchNormalization()(x)
     x = LeakyReLU()(x)
-    
-    # Sixième couche
-    x = Conv2D(256, kernel_size=(3, 3), strides=1, padding="same")(x)
+
+   # Huitième couche
+    x = Conv2D(64, kernel_size=(3, 3), strides=1, padding="same")(x)
     x = BatchNormalization()(x)
     x = LeakyReLU()(x)
-    
-    # Septième couche - Sortie encodée
+
+   # Neuvième couche
+    x = Conv2D(64, kernel_size=(3, 3), strides=1, padding="same")(x)
+    x = BatchNormalization()(x)
+    x = LeakyReLU()(x)
+
+   # Dernière couche
+    x = Conv2D(500, kernel_size=(8, 8), strides=1, padding="valid")(x)
+    encoded_output = BatchNormalization()(x)
+
     encoded_output = Conv2D(512, kernel_size=(4, 4), strides=2, padding="same")(x)
-    
-    # Création du modèle encodeur
     encoder = models.Model(encoder_input, encoded_output, name="encoder")
 
-   # Décodeur
-    decoder_input = Input(shape=encoded_output.shape[1:])
-    
-    # Première couche
-    x = Conv2DTranspose(256, kernel_size=(4, 4), strides=2, padding="same")(decoder_input)
+    # Définition du décodeur
+    decoder_input = layers.Input(shape=encoded_output.shape[1:])
+    x = Conv2DTranspose(32, kernel_size=(8, 8), strides=1, padding="valid")(decoder_input)
     x = BatchNormalization()(x)
     x = LeakyReLU()(x)
-    
+
     # Deuxième couche
-    x = Conv2DTranspose(128, kernel_size=(3, 3), strides=1, padding="same")(x)
-    x = BatchNormalization()(x)
-    x = LeakyReLU()(x)
-    
-    # Troisième couche
-    x = Conv2DTranspose(128, kernel_size=(4, 4), strides=2, padding="same")(x)
-    x = BatchNormalization()(x)
-    x = LeakyReLU()(x)
-    
-    # Quatrième couche
     x = Conv2DTranspose(64, kernel_size=(3, 3), strides=1, padding="same")(x)
     x = BatchNormalization()(x)
     x = LeakyReLU()(x)
-    
-    # Cinquième couche
+
+    # Troisième couche
+    x = Conv2DTranspose(128, kernel_size=(3, 3), strides=1, padding="same")(x)
+    x = BatchNormalization()(x)
+    x = LeakyReLU()(x)
+
+    # Quatrième couche
     x = Conv2DTranspose(64, kernel_size=(4, 4), strides=2, padding="same")(x)
     x = BatchNormalization()(x)
     x = LeakyReLU()(x)
-    
+
+    # Cinquième couche
+    x = Conv2DTranspose(64, kernel_size=(3, 3), strides=1, padding="same")(x)
+    x = BatchNormalization()(x)
+    x = LeakyReLU()(x)
+
     # Sixième couche
+    x = Conv2DTranspose(32, kernel_size=(3, 3), strides=1, padding="same")(x)
+    x = BatchNormalization()(x)
+    x = LeakyReLU()(x)
+
+    # Septième couche
+    x = Conv2DTranspose(128, kernel_size=(4, 4), strides=2, padding="same")(x)
+    x = BatchNormalization()(x)
+    x = LeakyReLU()(x)
+
+    # Huitième couche
+    x = Conv2DTranspose(64, kernel_size=(3, 3), strides=1, padding="same")(x)
+    x = BatchNormalization()(x)
+    x = LeakyReLU()(x)
+
+    # Neuvième couche
     x = Conv2DTranspose(32, kernel_size=(4, 4), strides=2, padding="same")(x)
     x = BatchNormalization()(x)
     x = LeakyReLU()(x)
-    
-    # Septième couche - Sortie décodée
+
+    # Dixième couche
+    x = Conv2DTranspose(32, kernel_size=(4, 4), strides=2, padding="same")(x)
+    x = BatchNormalization()(x)
+    x = LeakyReLU()(x)
+
+    # # Onzième couche
+    # x = Conv2DTranspose(3, kernel_size=(4, 4), strides=2, padding="same")(x)
+    # x = BatchNormalization()(x)
+    # x = LeakyReLU()(x)
+
+    # Dernière couche - Sigmoid pour la reconstruction
     decoded_output = Conv2DTranspose(3, kernel_size=(4, 4), strides=2, padding="same", activation="sigmoid")(x)
-    
-    # Création du modèle décodeur
     decoder = models.Model(decoder_input, decoded_output, name="decoder")
 
-    print("Forme crée")
     # Autoencodeur complet
     autoencoder_input = encoder_input
     encoded = encoder(autoencoder_input)
-    encoder.summary()
-    decoder.summary()
-    
-    # Adaptation pour correspondre aux dimensions du décodeur
-    print("Adaptation")
-    #reshaped_encoded = layers.Reshape((IMG_HEIGHT // 16, IMG_WIDTH // 16, 256))(encoded)
     autoencoder_output = decoder(encoded)
     autoencoder = models.Model(inputs=autoencoder_input, outputs=autoencoder_output)
 
     # Compilation du modèle
-    print("Compilation")
-    autoencoder.compile(optimizer=Adam(learning_rate=0.001), loss="mse", metrics="accuracy")
+    autoencoder.compile(optimizer=Nadam(learning_rate=0.001), loss="mse", metrics=["accuracy"])
+
+    # Résumé des modèles
+    encoder.summary()
+    decoder.summary()
     autoencoder.summary()
+
     # Entraîner le modèle
-    history = autoencoder.fit(X_train, X_train, epochs=EPOCHS, batch_size=BATCH_SIZE, validation_split=0.2, shuffle=True)
+    #early_stopping = tf.keras.callbacks.EarlyStopping(monitor='accuracy', patience=10,min_delta=1e-4,verbose=0,mode='auto')
+    history = autoencoder.fit(X_train_noised, X_train, epochs=EPOCHS, batch_size=BATCH_SIZE, validation_data=(X_valid_noised, X_valid), shuffle=True)
 
     # Récupérer les informations   
     nbperiode=np.arange(1,21,1)
@@ -227,9 +299,11 @@ def plot_reconstructions(model, images, n_images=5):
     plt.show()
 
 # Afficher des exemples de reconstructions pour évaluer la performance
-plot_reconstructions(autoencoder, X_train)
+plot_reconstructions(autoencoder, X_valid_noised)
 
-# Chargement et évaluation des anomalies
+
+
+# Fonction Chargement et évaluation des anomalies
 def load_and_prepare_image(filepath, img_size):
     img = cv2.imread(filepath)
     img = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
@@ -257,6 +331,8 @@ def plot_anomaly(model, image):
     plt.show()
 
 # Test de reconstruction et visualisation des anomalies
-erreur_dir = "D:\\cours\\PLP\\dataset\\visages\\head2.jpg"
-erreur = load_and_prepare_image(erreur_dir, image_size)
-plot_anomaly(autoencoder, erreur)
+# erreur_dir = "D:\\cours\\PLP\\dataset\\img_align_celeba\\head2.jpg"
+# erreur = load_and_prepare_image(erreur_dir, image_size)
+# plot_anomaly(autoencoder, erreur)
+
+

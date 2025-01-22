@@ -290,6 +290,6 @@ def plot_anomaly(model, image):
     plt.show()
 
 # Test de reconstruction et visualisation des anomalies
-erreur_dir = "D:\\cours\\PLP\\dataset\\hazelnut\\test\\crack\\015.png"
+erreur_dir = "D:\\cours\\PLP\\dataset\\hazelnut\\test\\print\\006.png"
 erreur = load_and_prepare_image(erreur_dir, image_size)
 plot_anomaly(autoencoder, erreur)
