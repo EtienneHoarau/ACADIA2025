@@ -13,14 +13,14 @@ os.environ['TF_CPP_MIN_LOG_LEVEL'] = '1'
 # Paramètres de base
 image_size = (256,256)
 data_dir = "D:\\cours\\PLP\\dataset\\hazelnut\\train\\augmented_images"  # Dossier de visages
-checkpoint_filepath = 'autoencoder_faces_512_17'
+checkpoint_filepath = 'autoencoder_faces_512_18'
 encoder_filepath = "./encoder/" + checkpoint_filepath + "_encoder"
 decoder_filepath = "./decoder/" + checkpoint_filepath + "_decoder"
 
 IMG_HEIGHT, IMG_WIDTH = image_size
 BATCH_SIZE = 1
-EPOCHS = 100
-NB_IMAGE = 1500
+EPOCHS = 200
+NB_IMAGE = 3000
 
 def calculate_psnr(img1, img2):
     # Vérifier si les images ont les mêmes dimensions
@@ -192,6 +192,8 @@ if not os.path.exists(checkpoint_filepath):
      # Compilation du modèle
     autoencoder.compile(optimizer=Nadam(learning_rate=0.001), loss="mse", metrics=["accuracy"])
     autoencoder.summary()
+    encoder.summary()
+    decoder.summary()
     # Entraîner le modèle
     history = autoencoder.fit(X_train, X_train, epochs=EPOCHS, batch_size=BATCH_SIZE, validation_split=0.2, shuffle=True)
 
@@ -273,7 +275,8 @@ def load_and_prepare_image(filepath, img_size):
 
 def plot_anomaly(model, image):
     reconstruction = model.predict(image)
-    erreur = image - reconstruction
+    erreur = image[:,:,:,1] - reconstruction[:,:,:,1]
+    print("SHape of error ",erreur.shape)
     plt.figure()
     plt.subplot(1, 3, 1)
     plt.imshow(image[0])
@@ -288,8 +291,56 @@ def plot_anomaly(model, image):
     plt.title("Erreur")
     plt.axis("off")
     plt.show()
+    return [reconstruction,erreur]
 
 # Test de reconstruction et visualisation des anomalies
-erreur_dir = "D:\\cours\\PLP\\dataset\\hazelnut\\test\\print\\006.png"
+erreur_dir = "D:\\cours\\PLP\\dataset\\hazelnut\\test\\cut\\006.png"
 erreur = load_and_prepare_image(erreur_dir, image_size)
-plot_anomaly(autoencoder, erreur)
+[recon,diff_image]=plot_anomaly(autoencoder, erreur)
+
+
+save_exemple="oui"
+if(save_exemple=="oui"):
+    
+    comp_test=X_train[0]
+    comp_test = np.expand_dims(comp_test, axis=0)
+    diff_image = np.expand_dims(diff_image, axis=-1)    
+    decomp_test=autoencoder.predict(comp_test)
+    
+
+    psnr_comp = calculate_psnr(comp_test, decomp_test)
+
+    # Convert outputs from 0-1 to 0, 255
+    recon *= 255.0
+    diff_image *= 255.0
+    comp_test *= 255.0
+    decomp_test *= 255.0
+    erreur *= 255.0
+
+    # Convert floats to bytes
+    # recon = recon.astype(np.uint8)
+    # diff_image = diff_image.astype(np.uint8)
+    # comp_test = comp_test.astype(np.uint8)
+    # decomp_test = decomp_test.astype(np.uint8)
+    # erreur = erreur.astype(np.uint8)
+
+
+
+    # Transpose the images from channel first (4, 96, 96) to channel last (96, 96, 4)
+    image1 = recon[0, :, :, :]
+    image2 = diff_image[0, :, :, :]
+    image3 = comp_test[0, :, :, :]
+    image4 = decomp_test[0, :, :, :]
+    image5 = erreur[0, :, :, :]
+    
+    path_save_img = "D:\\cours\\PLP\\pour_coudoux" 
+
+    cv2.imwrite("D:\\cours\\PLP\\pour_coudoux\image_a_detecter.png", image5)    
+    cv2.imwrite('D:\\cours\\PLP\\pour_coudoux\image_reconstruite.png', image1)
+    cv2.imwrite('D:\\cours\\PLP\\pour_coudoux\difference.png', image2)
+    cv2.imwrite('D:\\cours\\PLP\\pour_coudoux\image_a_compresser.png', image3)
+    cv2.imwrite('D:\\cours\\PLP\\pour_coudoux\image_decompresser.png', image4) 
+    file = open("D:\\cours\\PLP\\pour_coudoux\psnr.txt", "w")  
+    file.write(str(psnr_comp))
+    file.close()
+    
