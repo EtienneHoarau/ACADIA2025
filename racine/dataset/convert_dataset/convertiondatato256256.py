@@ -13,7 +13,7 @@ data_dir = "..\\train\\puzzle_extend"  # Dossier de visages
 
 # Chemin complet où sauvegarder le fichier
 directory = "."
-NB_IMAGE = 400
+NB_IMAGE = 1000
 filename = "convdata"+str(NB_IMAGE)+".npy"
 test = os.path.join(directory, filename) #Mettre le nom du fichier voulu dans le répertoire voulu
 image_size = (256,256)
