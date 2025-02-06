@@ -2,7 +2,7 @@
 #set -x
 
 # Configuration
-INPUT_FOLDER="dataset_puzzle_base"  # Dossier contenant les images source
+INPUT_FOLDER="dataset_puzzle_base_zoomed"  # Dossier contenant les images source
 OUTPUT_FOLDER="extended_images"      # Dossier pour les images augmentées
 NUM_AUGMENTED_IMAGES=2000            # Nombre total d'images augmentées à générer
 IMAGE_SIZE="512:512"
