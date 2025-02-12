@@ -8,6 +8,7 @@ import os
 import numpy as np
 import cv2
 import tensorflow as tf
+import keras
 from tensorflow.keras import layers, models
 from tensorflow.keras.layers import Input, Conv2D, Conv2DTranspose, BatchNormalization, LeakyReLU
 from tensorflow.keras.optimizers import Nadam
@@ -18,7 +19,7 @@ os.environ['TF_CPP_MIN_LOG_LEVEL'] = '1'
 
 # Base parameters
 image_size = (256,256)
-NB_IMAGE = 1000
+NB_IMAGE = 2000
 version=1
 data_dir = "..\\dataset\\convert_dataset\\convdata"+str(NB_IMAGE)+".npy"  # pretreated file
 checkpoint_filepath = '..\\model_trained\\model_V'+str(version)
@@ -249,12 +250,13 @@ if not os.path.exists(checkpoint_filepath):
     plt.show()
 
     # Sauvegarder le modèle complet et les sous-modèles
-    autoencoder.save(checkpoint_filepath, save_format='tf')
+    tf.saved_model.save(autoencoder,checkpoint_filepath)
     
     print("Model save.")
 else:
     print("Chargement des modèles existants.")
     autoencoder = tf.keras.models.load_model(checkpoint_filepath)
+    keras.layers.TFSMLayer(checkpoint_filepath, call_endpoint='serving_default')
 
 
 # Afficher des exemples de reconstructions pour évaluer la performance

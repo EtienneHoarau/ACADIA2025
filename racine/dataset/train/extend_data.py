@@ -55,4 +55,4 @@ def augment_images(input_dir, output_dir, target_count):
     print(f"Génération terminée. {target_count} images ont été enregistrées dans {output_dir}.")
 
 # Exemple d'utilisation
-augment_images('good', 'output_images', 100)
+augment_images('dataset_puzzle_base', 'extended_images', 2000)
