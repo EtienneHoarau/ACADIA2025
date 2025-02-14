@@ -1,33 +1,37 @@
 #!/bin/bash
 #set -x 
 
-# Dossier contenant les images source
+### Code to zoom test images with ffmpeg /!\ different_view does not need to be zoomed /!\
+
+## To use this script, read the read.me
+
+# Folder containing the source images
 INPUT_FOLDER="./twisted"
-# Dossier pour les images zoomées
+# Folder for the zoomed images
 OUTPUT_FOLDER="./twisted_zoomed"
-# Facteur de zoom (1.2 = zoom 20%, 1.5 = zoom 50%)
+# Zoom factor (1.2 = 20% zoom, 1.5 = 50% zoom)
 ZOOM_FACTOR=1.5
-# Taille de sortie (exemple : 1024x1024)
+# Output size (example: 1024x1024)
 IMAGE_SIZE="1024:1024"
 
-# Créer le dossier de sortie s'il n'existe pas
+# Create the output folder if it does not exist
 #mkdir -p "$OUTPUT_FOLDER"
 
 image_files=("$INPUT_FOLDER"/*.JPG)
 
-# Traitement de chaque image du dossier
+# Process each image in the folder
 for img in "${image_files[@]}"; do
-    echo "Traitement du dossier : $img"  # Imprime le nom du dossier d'entrée  
+    echo "Processing folder: $img"  # Print the input folder name  
 
-    [ -e "$img" ] || continue  # Vérifie si le fichier existe
+    [ -e "$img" ] || continue  # Check if the file exists
 
     filename=$(basename "$img")
     output_file="$OUTPUT_FOLDER/$filename"
 
     ffmpeg -i "$img" -vf "zoompan=z='min($ZOOM_FACTOR,2)':x='iw/2-(iw/zoom/2)':y='ih/2-(ih/zoom/2)',scale=$IMAGE_SIZE" -frames:v 1 "$output_file" -y
 
-    echo "Image zoomée enregistrée : $output_file"
+    echo "Zoomed image saved: $output_file"
 done
 
-echo "✅ Toutes les images ont été zoomées et enregistrées !"
+echo "✅ All images have been zoomed and saved!"
 sleep 100s

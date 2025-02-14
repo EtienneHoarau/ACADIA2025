@@ -1,18 +1,22 @@
 #!/bin/bash
 #set -x
 
+### Code to extend the number of images in a dataset using ffmpeg
+
+## To use this script, read the read.me 
+
 # Configuration
-INPUT_FOLDER="dataset_puzzle_base_zoomed"  # Dossier contenant les images source
-OUTPUT_FOLDER="extended_images"      # Dossier pour les images augmentées
-NUM_AUGMENTED_IMAGES=2000            # Nombre total d'images augmentées à générer
+INPUT_FOLDER="dataset_puzzle_base_zoomed"  # Folder containing source images
+OUTPUT_FOLDER="extended_images"      # Folder for augmented images
+NUM_AUGMENTED_IMAGES=2000            # Total number of augmented images to generate
 IMAGE_SIZE="512:512"
 
-# Créer le dossier de sortie s'il n'existe pas
+# Create the output folder if it does not exist
 #mkdir -p "$OUTPUT_FOLDER"
 
-echo "Configuration terminée."
+echo "Configuration completed."
 
-# Fonction pour ajouter du bruit
+# Function to add noise
 add_noise() {
     local input_file="$1"
     local output_file="$2"
@@ -20,7 +24,7 @@ add_noise() {
     ffmpeg -i "$input_file" -vf "noise=alls=${intensity}:allf=u,scale=$IMAGE_SIZE" -pix_fmt yuv420p -frames:v 1 -y "$output_file"
 }
 
-# Fonction pour tourner une image
+# Function to rotate an image
 rotate_image() {
     local input_file="$1"
     local output_file="$2"
@@ -30,13 +34,13 @@ rotate_image() {
         90) transpose="1" ;;
         180) transpose="2" ;;
         270) transpose="3" ;;
-        *) echo "Angle non valide"; return 1 ;;
+        *) echo "Invalid angle"; return 1 ;;
     esac
     
     ffmpeg -i "$input_file" -vf "transpose=$transpose,scale=$IMAGE_SIZE" -pix_fmt yuv420p -frames:v 1 -y "$output_file"
 }
 
-# Fonction pour retourner une image
+# Function to flip an image
 flip_image() {
     local input_file="$1"
     local output_file="$2"
@@ -45,11 +49,11 @@ flip_image() {
     case $direction in
         horizontal) ffmpeg -i "$input_file" -vf "hflip,scale=$IMAGE_SIZE" -pix_fmt yuv420p -frames:v 1 -y "$output_file" ;;
         vertical)   ffmpeg -i "$input_file" -vf "vflip,scale=$IMAGE_SIZE" -pix_fmt yuv420p -frames:v 1 -y "$output_file" ;;
-        *) echo "Direction non valide"; return 1 ;;
+        *) echo "Invalid direction"; return 1 ;;
     esac
 }
 
-# Fonction pour zoomer une image
+# Function to zoom an image
 zoom_image() {
     local input_file="$1"
     local output_file="$2"
@@ -59,7 +63,7 @@ zoom_image() {
     local height=$(ffprobe -v error -select_streams v:0 -show_entries stream=height -of csv=p=0 "$input_file")
     
     if [[ -z "$width" || -z "$height" ]]; then
-        echo "Erreur : Impossible de récupérer les dimensions de l'image."
+        echo "Error: Unable to retrieve image dimensions."
         return 1
     fi
     
@@ -71,7 +75,7 @@ zoom_image() {
     ffmpeg -i "$input_file" -vf "crop=${zoomed_width}:${zoomed_height}:${x_offset}:${y_offset},scale=$IMAGE_SIZE" -pix_fmt yuv420p -frames:v 1 -y "$output_file"
 }
 
-# Génération des images augmentées
+# Generate augmented images
 count=0
 image_files=("$INPUT_FOLDER"/*.JPG)
 
@@ -80,7 +84,7 @@ while [ "$count" -lt "$NUM_AUGMENTED_IMAGES" ]; do
         [ -e "$image_file" ] || continue
 
         base_name=$(basename "$image_file" | cut -d. -f1)
-        nb_copy=$((RANDOM % 20 + 10))  # Augmenter le nombre de copies pour garantir 2000 images
+        nb_copy=$((RANDOM % 20 + 10))  # Increase the number of copies to ensure 2000 images
 
         for ((i = 0; i < nb_copy && count < NUM_AUGMENTED_IMAGES; i++)); do
             transformation=$((RANDOM % 4))
@@ -93,14 +97,14 @@ while [ "$count" -lt "$NUM_AUGMENTED_IMAGES" ]; do
                 3) zoom_image "$image_file" "$output_file" ;;
             esac
 
-            # Vérifier que l'image a bien été créée
+            # Check if the image was successfully created
             if [ -e "$output_file" ]; then
                 count=$((count + 1))
             else
-                echo "⚠️ Échec de la transformation, tentative ignorée."
+                echo "⚠️ Transformation failed, attempt ignored."
             fi
 
-            # Arrêter si on a atteint le nombre voulu
+            # Stop if the desired number is reached
             if [ "$count" -ge "$NUM_AUGMENTED_IMAGES" ]; then
                 break 2
             fi
@@ -108,4 +112,4 @@ while [ "$count" -lt "$NUM_AUGMENTED_IMAGES" ]; do
     done
 done
 
-echo "✅ Augmentation terminée : $count images générées dans $OUTPUT_FOLDER."
+echo "✅ Augmentation completed: $count images generated in $OUTPUT_FOLDER."
