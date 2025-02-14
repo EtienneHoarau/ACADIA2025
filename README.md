@@ -36,4 +36,14 @@ racine/
 
 # Launch a .sh file
 ## Prerequisites on Windows:
-- Download WSL (allow windows to launch a .sh file) : ``` sh wsl --install ``` and restart your computer
+- Download WSL (allow windows to launch a .sh file) : ```  wsl --install ``` and restart your computer
+- Download FFMPEG : ``` winget install ffmpeg ``` and restart the shell
+
+## How to use it?
+Place the .sh file in a folder containing:
+
+An empty folder named augmented_images
+A folder with the images to be modified in order to increase their number, named good
+Run the .sh file.
+
+Wait for the process to complete.
