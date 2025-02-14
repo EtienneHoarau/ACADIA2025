@@ -40,10 +40,10 @@ racine/
 - Download FFMPEG : ``` winget install ffmpeg ``` and restart the shell
 
 ## How to use it?
-Place the .sh file in a folder containing:
+Place the .sh file in a folder containing:  
+  
+An empty folder named augmented_images  
+A folder with the images to be modified in order to increase their number, named good  
+Run the .sh file.  
 
-An empty folder named augmented_images
-A folder with the images to be modified in order to increase their number, named good
-Run the .sh file.
-
-Wait for the process to complete.
+Wait for the process to complete.  
