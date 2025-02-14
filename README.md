@@ -32,3 +32,8 @@ racine/
 │
 └── train/
     └── train.py                  # Contains the model training code
+
+
+# Launch a .sh file
+## Prerequisites on Windows:
+- Download WSL (allow windows to launch a .sh file) : ``` wsl --install ``` and restart your computer
